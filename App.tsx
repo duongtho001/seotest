@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Search, Globe, Settings, X, Key, AlertCircle, CheckCircle,
   FileText, Hash, Lightbulb, Clock, ExternalLink, PlayCircle,
-  Loader2, ChevronRight, Sparkles
+  Loader2, ChevronRight, Sparkles, Cpu
 } from 'lucide-react';
 import {
   analyzeWithGemini,
@@ -10,6 +10,9 @@ import {
   getApiKey,
   setApiKey,
   removeApiKey,
+  getSelectedModel,
+  setSelectedModel,
+  GEMINI_MODELS,
   SEOAnalysisResult
 } from './services/geminiApi';
 
@@ -18,26 +21,29 @@ const SettingsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   apiKey: string;
-  onSaveApiKey: (key: string) => void;
-}> = ({ isOpen, onClose, apiKey, onSaveApiKey }) => {
+  selectedModel: string;
+  onSave: (key: string, model: string) => void;
+}> = ({ isOpen, onClose, apiKey, selectedModel, onSave }) => {
   const [inputKey, setInputKey] = useState(apiKey);
+  const [inputModel, setInputModel] = useState(selectedModel);
   const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
     setInputKey(apiKey);
-  }, [apiKey]);
+    setInputModel(selectedModel);
+  }, [apiKey, selectedModel]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
-    onSaveApiKey(inputKey.trim());
+    onSave(inputKey.trim(), inputModel);
     onClose();
   };
 
   const handleClear = () => {
     setInputKey('');
     removeApiKey();
-    onSaveApiKey('');
+    onSave('', inputModel);
     onClose();
   };
 
@@ -47,15 +53,19 @@ const SettingsModal: React.FC<{
         <div className="modal-header">
           <h2 className="modal-title">
             <Settings size={20} />
-            Cài đặt API Key
+            Cài đặt
           </h2>
           <button className="modal-close" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
         <div className="modal-body">
+          {/* API Key Input */}
           <div className="form-group">
-            <label className="form-label">Gemini API Key</label>
+            <label className="form-label">
+              <Key size={14} style={{ marginRight: '0.5rem' }} />
+              Gemini API Key
+            </label>
             <input
               type={showKey ? "text" : "password"}
               className="form-input"
@@ -70,16 +80,42 @@ const SettingsModal: React.FC<{
               </a>
             </p>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+
+          {/* Show API Key Checkbox */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '1.25rem' }}>
             <input
               type="checkbox"
               checked={showKey}
               onChange={(e) => setShowKey(e.target.checked)}
+              style={{ accentColor: 'var(--accent-primary)' }}
             />
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Hiển thị API Key
             </span>
           </label>
+
+          {/* Model Selection */}
+          <div className="form-group">
+            <label className="form-label">
+              <Cpu size={14} style={{ marginRight: '0.5rem' }} />
+              Model AI
+            </label>
+            <select
+              className="form-input"
+              value={inputModel}
+              onChange={(e) => setInputModel(e.target.value)}
+              style={{ cursor: 'pointer' }}
+            >
+              {GEMINI_MODELS.map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+            <p className="form-hint">
+              Chọn model phù hợp với nhu cầu. Flash nhanh hơn, Pro chính xác hơn.
+            </p>
+          </div>
         </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={handleClear}>
@@ -286,14 +322,20 @@ const App: React.FC = () => {
   const [result, setResult] = useState<SEOAnalysisResult | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKeyState] = useState(getApiKey() || '');
+  const [selectedModel, setSelectedModelState] = useState(getSelectedModel());
 
   const hasApiKey = apiKey.length > 0;
 
-  const handleSaveApiKey = (key: string) => {
+  // Get current model name for display
+  const currentModelName = GEMINI_MODELS.find(m => m.id === selectedModel)?.name || selectedModel;
+
+  const handleSaveSettings = (key: string, model: string) => {
     if (key) {
       setApiKey(key);
     }
     setApiKeyState(key);
+    setSelectedModel(model);
+    setSelectedModelState(model);
   };
 
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -366,10 +408,34 @@ const App: React.FC = () => {
               <span className="logo-text">SEO Auditor</span>
             </div>
             <div className="header-actions">
+              {/* Model Badge */}
+              {hasApiKey && (
+                <div
+                  className="model-badge"
+                  onClick={() => setShowSettings(true)}
+                  title="Click để thay đổi model"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    padding: '0.375rem 0.75rem',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Cpu size={14} />
+                  <span>{currentModelName}</span>
+                </div>
+              )}
               <button
                 className="btn btn-icon btn-ghost"
                 onClick={() => setShowSettings(true)}
-                title="Cài đặt API Key"
+                title="Cài đặt"
               >
                 <Settings size={20} />
               </button>
@@ -438,7 +504,7 @@ const App: React.FC = () => {
             ) : (
               <div className="api-notice success">
                 <CheckCircle size={16} />
-                <span>API Key đã được cài đặt</span>
+                <span>API Key đã được cài đặt • Model: {currentModelName}</span>
               </div>
             )}
 
@@ -467,7 +533,7 @@ const App: React.FC = () => {
         {loading && (
           <div className="loading-container animate-fade-in">
             <div className="loading-spinner" />
-            <p className="loading-text">Đang phân tích trang web với Gemini AI...</p>
+            <p className="loading-text">Đang phân tích trang web với {currentModelName}...</p>
           </div>
         )}
 
@@ -509,7 +575,8 @@ const App: React.FC = () => {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         apiKey={apiKey}
-        onSaveApiKey={handleSaveApiKey}
+        selectedModel={selectedModel}
+        onSave={handleSaveSettings}
       />
     </>
   );

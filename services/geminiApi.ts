@@ -1,6 +1,18 @@
 // Gemini API Service for SEO Analysis
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+// Available Gemini Models
+export const GEMINI_MODELS = [
+    { id: 'gemini-2.5-flash-preview-05-20', name: 'Gemini 2.5 Flash' },
+    { id: 'gemini-2.5-pro-preview-05-06', name: 'Gemini 2.5 Pro' },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
+];
+
+const DEFAULT_MODEL = 'gemini-2.0-flash';
+
+const getApiUrl = (model: string) =>
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 export interface SEOAnalysisResult {
     score: number;
@@ -28,6 +40,7 @@ export interface SEOAnalysisResult {
     timestamp: string;
 }
 
+// API Key Management
 export const getApiKey = (): string | null => {
     return localStorage.getItem('gemini_api_key');
 };
@@ -40,8 +53,19 @@ export const removeApiKey = (): void => {
     localStorage.removeItem('gemini_api_key');
 };
 
+// Model Management
+export const getSelectedModel = (): string => {
+    return localStorage.getItem('gemini_model') || DEFAULT_MODEL;
+};
+
+export const setSelectedModel = (model: string): void => {
+    localStorage.setItem('gemini_model', model);
+};
+
+// Main Analysis Function
 export const analyzeWithGemini = async (url: string): Promise<SEOAnalysisResult> => {
     const apiKey = getApiKey();
+    const model = getSelectedModel();
 
     if (!apiKey) {
         throw new Error('API_KEY_REQUIRED');
@@ -85,7 +109,7 @@ Important guidelines:
 Respond ONLY with the JSON object, no additional text or markdown formatting.`;
 
     try {
-        const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        const response = await fetch(`${getApiUrl(model)}?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
