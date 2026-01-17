@@ -1,15 +1,18 @@
 // Gemini API Service for SEO Analysis
 
-// Available Gemini Models
+// Available Gemini Models (Updated Jan 2025)
 export const GEMINI_MODELS = [
-    { id: 'gemini-2.5-flash-preview-05-20', name: 'Gemini 2.5 Flash' },
-    { id: 'gemini-2.5-pro-preview-05-06', name: 'Gemini 2.5 Pro' },
+    { id: 'gemini-3-pro', name: 'Gemini 3 Pro (Mới nhất)' },
+    { id: 'gemini-3-flash', name: 'Gemini 3 Flash' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite' },
     { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
     { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
 ];
 
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 const getApiUrl = (model: string) =>
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
